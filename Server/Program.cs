@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.IO;
 
 namespace Server
 {
@@ -20,17 +21,19 @@ namespace Server
             stop.Start();
             while (!isStop) 
             {
-                var data = Encoding.Unicode.GetBytes("Hi!");
-                server.Send(data, data.Length, endPoint);
+                x.Write(1.5);
+                byte[] data;
+                x.BaseStream.Read(new Span<byte> data);
+                server.Send(x, sizeof(x), endPoint);
                 Console.WriteLine("Send");
-                Thread.Sleep(2000);
+                Thread.Sleep(100);
             }
 
         }
         static void Stop()
         {
-            Console.ReadKey();
-            isStop = true;
+            if (Console.ReadKey().Key==ConsoleKey.Escape)
+                isStop = true;
         }
     }
 }

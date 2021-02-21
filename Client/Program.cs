@@ -7,75 +7,46 @@ using System.IO;
 
 namespace Client
 {
+    delegate void Message(double tick);
+    delegate void Simple();
     class Program
     {
         const int _port = 3130;
         const string _ip = "235.5.5.11";
-        static bool isStop = false;
-        delegate void Message(double tick);
-        static event Message NewMessage;
-        static object dataLock=new object();
+        static bool IsStop { set; get; } = false;
+        static public object dataLock = new object();
+        static event Message NewMessageEvent=CCalculator.Add;
+        static event Simple GetInfoEvent=CCalculator.GetInfo;
+        static event Simple StopEvent = () => { IsStop = true; };
         static void Main()
         {
             var client = new UdpClient(_port);
             var ip = IPAddress.Parse(_ip);
-            var stop = new Thread(new ThreadStart(Stop));
+            var keyReader = new Thread(new ThreadStart(KeyReader));
+            keyReader.Start();
             client.JoinMulticastGroup(ip, 20);
             IPEndPoint endPoint = null;
-            while (!isStop)
+            while (!IsStop)
             {
                 var data = client.Receive(ref endPoint);
                 var reader = new BinaryReader(new MemoryStream(data));
-                NewMessage?.Invoke(reader.ReadDouble());
-                Console.WriteLine(Encoding.Unicode.GetString(data));
+                NewMessageEvent?.Invoke(reader.ReadDouble());
+ //               Console.WriteLine(Encoding.Unicode.GetString(data));
             }
+            keyReader.Join();
         }
-        static void Stop()
+        static void KeyReader()
         {
-            Console.ReadKey();
-            isStop = true;
-        }
-        static void Calculator()
-        {
-            double sum = 0;
-            double squareSum = 0;
-            ulong count = 0;
-            Message add = (double it) =>
-              {
-                  double squareIt = it * it;
-                  lock (dataLock)
-                  {
-                      sum += it;
-                      squareSum += squareIt;
-                      ++count;
-                  }
-              };
-            NewMessage += add;
-            while (!isStop)
-            {
-                var key=Console.ReadKey();
-                if (key.Key == ConsoleKey.Enter)
+            while(!IsStop)
+                switch (Console.ReadKey().Key)
                 {
-                    double _sum;
-                    double _squareSum;
-                    ulong _count;
-                    lock (dataLock)
-                    {
-                        _sum = sum;
-                        _squareSum = squareSum;
-                        _count = count;
-                    }
-                    GetInfo(_sum, _squareSum,_count);
+                    case ConsoleKey.Escape:
+                        StopEvent();
+                        break;
+                    case ConsoleKey.Enter:
+                        GetInfoEvent?.Invoke();
+                        break;
                 }
-            }
-            NewMessage -= add;
-        }
-        static void GetInfo(double sum,double squareSum,ulong count)
-        {
-            double sma = sum / count;
-            double standartDev = squareSum + sma * (2 * sum + count * sma);
-            Console.WriteLine($"SMA={sma}");
-            Console.WriteLine($"Standart deviation={standartDev}");
         }
     }
 }
