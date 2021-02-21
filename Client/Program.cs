@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Client
 {
-    delegate void Message(double tick);
+    delegate void Message(int tick);
     delegate void Simple();
     class Program
     {
@@ -15,8 +15,8 @@ namespace Client
         const string _ip = "235.5.5.11";
         static bool IsStop { set; get; } = false;
         static public object dataLock = new object();
-        static event Message NewMessageEvent=CCalculator.Add;
-        static event Simple GetInfoEvent=CCalculator.GetInfo;
+        static event Message NewMessageEvent = CCalculator.Add;
+        static event Simple GetInfoEvent = CCalculator.GetInfo;
         static event Simple StopEvent = () => { IsStop = true; };
         static void Main()
         {
@@ -30,14 +30,14 @@ namespace Client
             {
                 var data = client.Receive(ref endPoint);
                 var reader = new BinaryReader(new MemoryStream(data));
-                NewMessageEvent?.Invoke(reader.ReadDouble());
- //               Console.WriteLine(Encoding.Unicode.GetString(data));
+                NewMessageEvent?.Invoke(reader.ReadInt32());
+                //               Console.WriteLine(Encoding.Unicode.GetString(data));
             }
             keyReader.Join();
         }
         static void KeyReader()
         {
-            while(!IsStop)
+            while (!IsStop)
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.Escape:
