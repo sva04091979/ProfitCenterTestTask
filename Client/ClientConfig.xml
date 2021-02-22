@@ -1,13 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?> 
 <config>
   <global>
-    <min>1</min>
-    <max>2</max>
-    <tick_size>0.00001</tick_size>
     <port>3130</port>
     <ip>235.5.5.11</ip>
   </global>
-  <server>
-    <delay>100</delay>
-  </server>
+  <client>
+    <delay>1000</delay>
+  </client>
 </config>

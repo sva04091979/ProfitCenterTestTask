@@ -10,36 +10,37 @@ namespace Server
 {
     class Program
     {
-        const int _port = 3130;
-        const string _ip = "235.5.5.11";
-        const int sleepMin = 100;
-        const int sleepMax = 750;
+        const int heard = sizeof(long) + 4 * sizeof(int);
+        static int _port;
+        static string _ip;
+        static int sleepMax;
         static int min;
         static int max;
-        static int step = 1;
-        static bool isStop = false;
+        static int maxValue;
+        static int step;
         static int digits;
+        static bool isStop = false;
+        static MemoryStream data = new MemoryStream(heard + sizeof(ulong) + sizeof(int));
         static void Main()
         {
             Init();
-            int maxValue = (max - min) / step;
-            var server = new UdpClient();
-            var ip = IPAddress.Parse(_ip);
-            var endPoint = new IPEndPoint(ip, _port);
             var stop = new Thread(new ThreadStart(Stop));
             stop.Start();
-            var rnd = new Random(DateTime.Now.Millisecond);
-            while (!isStop) 
+            while (!isStop)
             {
-                int val = rnd.Next(maxValue);
-                server.Send(BitConverter.GetBytes(val), sizeof(int), endPoint);
-                Thread.Sleep(rnd.Next(sleepMin,sleepMax));
+                var sender = new Thread(new ThreadStart(Sender));
+                sender.Start();
+                sender.Join();
             }
+            stop.Join();
         }
         static void Stop()
         {
-            if (Console.ReadKey().Key==ConsoleKey.Escape)
-                isStop = true;
+            while (!isStop)
+            {
+                if (Console.ReadKey().Key == ConsoleKey.Escape)
+                    isStop = true;
+            }
         }
         static void Init()
         {
@@ -48,13 +49,16 @@ namespace Server
             var _min=set["config"]["global"]["min"].InnerText;
             var _max= set["config"]["global"]["max"].InnerText;
             var _tickSize= set["config"]["global"]["tick_size"].InnerText;
+            _port= int.Parse(set["config"]["global"]["port"].InnerText);
+            _ip = set["config"]["global"]["ip"].InnerText;
+            sleepMax = int.Parse(set["config"]["server"]["delay"].InnerText);
             var posTickSize = _tickSize.IndexOf(".");
             var posMin = _min.IndexOf(".");
             var posMax = _max.IndexOf(".");
             var digitsTickSize = posTickSize<0?0:_tickSize.Length - posTickSize - 1;
             var digitsMin = posMin<0?0:_min.Length - posMin - 1;
             var digitsMax = posMax<0?0:_max.Length - posMin - 1;
-            var digits = Math.Max(digitsTickSize, Math.Max(digitsMin, digitsMax));
+            digits = Math.Max(digitsTickSize, Math.Max(digitsMin, digitsMax));
             if (posTickSize != -1) _tickSize = _tickSize.Remove(posTickSize, 1);
             if (posMin != -1) _min = _min.Remove(posMin, 1);
             if (posMax != -1) _max = _max.Remove(posMax, 1);
@@ -64,12 +68,56 @@ namespace Server
             min = int.Parse(_min);
             max = int.Parse(_max);
             step = int.Parse(_tickSize);
-            Console.WriteLine(digitsTickSize);
-            Console.WriteLine(digitsMin);
-            Console.WriteLine(digitsMax);
-            Console.WriteLine(min);
-            Console.WriteLine(max);
-            Console.WriteLine(step);
+            maxValue = (max - min) / step;
+            data.Seek(sizeof(long), SeekOrigin.Begin);
+            data.Write(BitConverter.GetBytes(min));
+            data.Write(BitConverter.GetBytes(maxValue));
+            data.Write(BitConverter.GetBytes(step));
+            data.Write(BitConverter.GetBytes(digits));
+        }
+        static void Sender()
+        {
+            bool isSocket = false;
+            try
+            {
+                var server = new UdpClient();
+                var ip = IPAddress.Parse(_ip);
+                var endPoint = new IPEndPoint(ip, _port);
+                var rnd = new Random(DateTime.Now.Millisecond);
+                ulong count = 0;
+                data.Seek(0, SeekOrigin.Begin);
+                data.Write(BitConverter.GetBytes(DateTime.Now.ToBinary()));
+                Console.WriteLine("Server start.");
+                Console.WriteLine("Press escape for exit.");
+                while (!isStop)
+                {
+                    data.Seek(heard, SeekOrigin.Begin);
+                    data.Write(BitConverter.GetBytes(++count));
+                    data.Write(BitConverter.GetBytes(rnd.Next(maxValue)));
+                    server.Send(data.GetBuffer(), (int)data.Length, endPoint);
+                    Console.WriteLine(count);
+                    Thread.Sleep(rnd.Next(sleepMax));
+                }
+            }
+            catch (SocketException)
+            {
+                if (!isSocket)
+                {
+                    isSocket = true;
+                    Console.WriteLine("Net error");
+                }
+                Thread.Sleep(100);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                Console.WriteLine("Wrong ip or port");
+                Console.WriteLine("Press any key for exit");
+                isStop = true;
+            }
+            finally
+            {
+                Console.WriteLine("Server stop");
+            }
         }
     }
 }

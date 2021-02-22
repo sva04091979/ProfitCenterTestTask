@@ -29,18 +29,18 @@ namespace Client
             {
                 if (value >= i)
                 {
-                    if (++ii == CCalculator.data[i]) ShiftRight();
+                    if (++ii == CCalculator.arr[i]) ShiftRight();
                 }
             }
         }
         void ShiftLeft()
         {
-            while (CCalculator.data[--i] == 0) ;
-            ii = CCalculator.data[i] - 1;
+            while (CCalculator.arr[--i] == 0) ;
+            ii = CCalculator.arr[i] - 1;
         }
         void ShiftRight()
         {
-            while (CCalculator.data[++i] == 0) ;
+            while (CCalculator.arr[++i] == 0) ;
             ii = 0;
         }
         void Start(int value)
@@ -51,10 +51,10 @@ namespace Client
         }
         protected int Right()
         {
-            if (ii == CCalculator.data[i] - 1)
+            if (ii == CCalculator.arr[i] - 1)
             {
                 int iii = i;
-                while (CCalculator.data[++iii]==0);
+                while (CCalculator.arr[++iii]==0);
                 return iii;
             }
             else return i;
@@ -77,17 +77,14 @@ namespace Client
         public override double Compute()
         {
             int x0 = i * CCalculator.dataSplit;
-            ulong delta = i == CCalculator.data.Length - 1 ? CCalculator.maxValue - CCalculator.data[i] : CCalculator.dataSplit;
+            long delta = i == CCalculator.arr.Length - 1 ? CCalculator.maxValue - x0 : CCalculator.dataSplit;
             ulong prevSum = PrevSum();
-            Console.WriteLine($"x0={x0}");
-            Console.WriteLine($"delta={delta}");
-            Console.WriteLine($"prevSum={prevSum}");
-            return (x0 + delta * ((CCalculator.Count/2.0)-prevSum) / CCalculator.data[i])/CCalculator.digitK;
+            return (x0 + delta * ((CCalculator.Count/2.0)-prevSum) / CCalculator.arr[i])/CCalculator.digitK;
         }
         ulong PrevSum()
         {
             ulong ret = 0;
-            for (int _i = 0; _i < i; ret += CCalculator.data[_i++]) ;
+            for (int _i = 0; _i < i; ret += CCalculator.arr[_i++]) ;
             return ret;
         }
     }
@@ -98,13 +95,13 @@ namespace Client
         abstract public void Compute(ref List<double> moda);
         public void Check(int value)
         {
-            if (max < CCalculator.data[value])
+            if (max < CCalculator.arr[value])
             {
                 moda.Clear();
                 moda.Add(value);
-                max = CCalculator.data[value];
+                max = CCalculator.arr[value];
             }
-            else if (max == CCalculator.data[value])
+            else if (max == CCalculator.arr[value])
                 moda.Add(value);
         }
     }
@@ -125,11 +122,11 @@ namespace Client
             foreach (var i in moda)
             {
                 int x0 = i * CCalculator.dataSplit;
-                int delta = i == CCalculator.data.Length - 1 ? CCalculator.maxValue - x0 : CCalculator.dataSplit;
-                ulong prevF = i == 0 ? 0 : CCalculator.data[i - 1];
-                ulong nextF = i == CCalculator.data.Length - 1 ? 0 : CCalculator.data[i + 1];
-                double deltaPrev = CCalculator.data[i] - prevF;
-                double deltaNext = CCalculator.data[i] - nextF;
+                int delta = i == CCalculator.arr.Length - 1 ? CCalculator.maxValue - x0 : CCalculator.dataSplit;
+                ulong prevF = i == 0 ? 0 : CCalculator.arr[i - 1];
+                ulong nextF = i == CCalculator.arr.Length - 1 ? 0 : CCalculator.arr[i + 1];
+                double deltaPrev = CCalculator.arr[i] - prevF;
+                double deltaNext = CCalculator.arr[i] - nextF;
                 list.Add((x0+delta*(deltaPrev/(deltaPrev+deltaNext)))/CCalculator.digitK);
             }
         }
@@ -140,7 +137,7 @@ namespace Client
         protected IModa moda;
         public void Add(int value)
         {
-            ++CCalculator.data[value];
+            ++CCalculator.arr[value];
             mediana.Check(value);
             moda.Check(value);
         }
