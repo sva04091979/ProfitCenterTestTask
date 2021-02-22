@@ -22,6 +22,7 @@ namespace Client
         {
             var client = new UdpClient(_port);
             var ip = IPAddress.Parse(_ip);
+            CCalculator.Init();
             var keyReader = new Thread(new ThreadStart(KeyReader));
             keyReader.Start();
             client.JoinMulticastGroup(ip, 20);
@@ -31,7 +32,6 @@ namespace Client
                 var data = client.Receive(ref endPoint);
                 var reader = new BinaryReader(new MemoryStream(data));
                 NewMessageEvent?.Invoke(reader.ReadInt32());
-                //               Console.WriteLine(Encoding.Unicode.GetString(data));
             }
             keyReader.Join();
         }

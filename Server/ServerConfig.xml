@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<config>
+  <global>
+    <min>1</min>
+    <max>2</max>
+    <tick_size>0.00001</tick_size>
+  </global>
+  <server>
+    <max_delay>500</max_delay>
+  </server>
+</config>

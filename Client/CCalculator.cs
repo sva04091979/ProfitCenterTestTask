@@ -11,17 +11,25 @@ namespace Client
     {
         static double sum = 0.0;
         static double squareSum = 0.0;
-        static ulong count = 0;
+        static public ulong Count { get; set; } = 0;
         const int digits = 5;
         const int step = 1;
         const int min = 100000;
         const int max = 200000;
-        const int maxValue = (max - min) / step;
+        public const int maxValue = (max - min) / step;
         const int maxDataSize = 1000;
-        const int dataSplit = maxValue > maxDataSize ? maxValue / maxDataSize + 1 : 1;
+        public const int dataSplit = maxValue > maxDataSize ? maxValue / maxDataSize + 1 : 1;
         const int dataSize = maxValue % dataSplit == 0 ? maxValue / dataSplit : maxValue / dataSplit + 1;
-        static double digitK = Math.Pow(10, digits);
-        static ulong[] data = new ulong[dataSize];
+        static public double digitK = Math.Pow(10, digits);
+        static public ulong[] data = new ulong[dataSize];
+        static IStatistic stat;
+        static public void Init()
+        {
+            if (dataSplit == 1)
+                stat = new SimpleStatistic();
+            else
+                stat = new RangeStatistic();
+        }
         static async public void Add(int value)
         {
             await Task.Run(() =>
@@ -33,8 +41,8 @@ namespace Client
                 {
                     sum += it;
                     squareSum += squareIt;
-                    ++count;
-                    ++data[i];
+                    ++Count;
+                    stat.Add(i);
                 }
 
             });
@@ -42,15 +50,21 @@ namespace Client
         static public void GetInfo()
         {
             var timer = DateTime.Now.Ticks;
-            double sma, standartDev,mediana=0,moda=0;
+            double sma, standartDev;
+            double mediana=0;
+            List<double> moda=new List<double>();
             lock (Program.dataLock)
             {
-                sma = sum / count;
-                standartDev = Math.Sqrt((squareSum + sma * (count * sma - 2 * sum)) / count);
+                sma = sum / Count;
+                standartDev = Math.Sqrt((squareSum + sma * (Count * sma - 2 * sum)) / Count);
+                stat.Stat(ref mediana,ref moda);
             }
             timer = DateTime.Now.Ticks - timer;
             Console.WriteLine($"SMA={sma}");
             Console.WriteLine($"Standart deviation={standartDev}");
+            Console.WriteLine($"Mediana={mediana+min/digitK}");
+            foreach (var it in moda)
+                Console.WriteLine($"Moda={it+min/digitK}");
             Console.WriteLine($"Time: {timer} ticks");
             Console.WriteLine($"Time: {timer / 10000.0} ms");
         }
