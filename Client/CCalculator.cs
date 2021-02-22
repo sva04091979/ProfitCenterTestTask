@@ -12,22 +12,23 @@ namespace Client
         static double sum = 0.0;
         static double squareSum = 0.0;
         static ulong count = 0;
+        const int digits = 5;
         const int step = 1;
         const int min = 100000;
         const int max = 200000;
-        const int _max = min + (max - min) / step;
-        const int dataSize = 1000;
-        const int dataSplit = _max - min > dataSize?(_max-min)/dataSize+1:1;
-        static double digitK = 100000.0;
-        static ulong[] data = new ulong[(_max-min)/dataSplit];
+        const int maxValue = (max - min) / step;
+        const int maxDataSize = 1000;
+        const int dataSplit = maxValue > maxDataSize ? maxValue / maxDataSize + 1 : 1;
+        const int dataSize = maxValue % dataSplit == 0 ? maxValue / dataSplit : maxValue / dataSplit + 1;
+        static double digitK = Math.Pow(10, digits);
+        static ulong[] data = new ulong[dataSize];
         static async public void Add(int value)
         {
             await Task.Run(() =>
             {
-                int _it = min+(value-min) / step;
-                double it = value / digitK;
+                double it = (min+value*step) / digitK;
                 double squareIt = it * it;
-                int i = (_it - min) / dataSplit;
+                int i = value / dataSplit;
                 lock(Program.dataLock)
                 {
                     sum += it;
@@ -46,23 +47,12 @@ namespace Client
             {
                 sma = sum / count;
                 standartDev = Math.Sqrt((squareSum + sma * (count * sma - 2 * sum)) / count);
-                Calculate(ref mediana, ref moda);
             }
             timer = DateTime.Now.Ticks - timer;
             Console.WriteLine($"SMA={sma}");
             Console.WriteLine($"Standart deviation={standartDev}");
             Console.WriteLine($"Time: {timer} ticks");
             Console.WriteLine($"Time: {timer / 10000.0} ms");
-        }
-        static void Calculate(ref double mediana,ref double moda)
-        {
-            int[] medianaShift=new int[2];
-            List<int> modaShift = new List<int>();
-            GetShifts(ref medianaShift, ref modaShift);
-            if (dataSplit == 1)
-            {
-                mediana=data
-            }
         }
     };
 }

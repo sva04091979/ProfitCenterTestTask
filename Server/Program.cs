@@ -11,12 +11,12 @@ namespace Server
     {
         const int _port = 3130;
         const string _ip = "235.5.5.11";
-        const int digits = 5;
-        const int step = 1;
         const int sleepMin = 100;
         const int sleepMax = 750;
         const int min = 100000;
         const int max = 200000;
+        const int step = 1;
+        const int maxValue = (max - min) / step;
         static bool isStop = false;
         static void Main()
         {
@@ -25,11 +25,10 @@ namespace Server
             var endPoint = new IPEndPoint(ip, _port);
             var stop = new Thread(new ThreadStart(Stop));
             stop.Start();
-            int _max = min + (max - min) / step;
             var rnd = new Random(DateTime.Now.Millisecond);
             while (!isStop) 
             {
-                int val = min + (rnd.Next(min, _max) - min) * step;
+                int val = rnd.Next(maxValue);
                 server.Send(BitConverter.GetBytes(val), sizeof(int), endPoint);
                 Thread.Sleep(rnd.Next(sleepMin,sleepMax));
             }
