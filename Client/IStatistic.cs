@@ -17,7 +17,7 @@ namespace Client
         abstract public double Compute();
         void _Check(int value)
         {
-            if (CCalculator.Count % 2 == 0)
+            if (CCalculator.stat.count % 2 == 0)
             {
                 if (value < i)
                 {
@@ -65,21 +65,21 @@ namespace Client
         public override double Compute()
         {
             double ret=i;
-            if (CCalculator.Count % 2 == 0)
+            if (CCalculator.stat.count % 2 == 0)
             {
                 ret = (ret + Right()) / 2.0;
             }
-            return ret / CCalculator.digitK;
+            return ret / CCalculator.set.digitK;
         }
     }
     class RangeMediana : IMediana
     {
         public override double Compute()
         {
-            int x0 = i * CCalculator.dataSplit;
-            long delta = i == CCalculator.arr.Length - 1 ? CCalculator.maxValue - x0 : CCalculator.dataSplit;
+            int x0 = i * CCalculator.set.dataSplit;
+            long delta = i == CCalculator.arr.Length - 1 ? CCalculator.set.maxValue - x0 : CCalculator.set.dataSplit;
             ulong prevSum = PrevSum();
-            return (x0 + delta * ((CCalculator.Count/2.0)-prevSum) / CCalculator.arr[i])/CCalculator.digitK;
+            return (x0 + delta * ((CCalculator.stat.count/2.0)-prevSum) / CCalculator.arr[i])/CCalculator.set.digitK;
         }
         ulong PrevSum()
         {
@@ -111,7 +111,7 @@ namespace Client
         {
             foreach(var it in moda)
             {
-                list.Add(it/CCalculator.digitK);
+                list.Add(it/CCalculator.set.digitK);
             }
         }
     }
@@ -121,13 +121,13 @@ namespace Client
         {
             foreach (var i in moda)
             {
-                int x0 = i * CCalculator.dataSplit;
-                int delta = i == CCalculator.arr.Length - 1 ? CCalculator.maxValue - x0 : CCalculator.dataSplit;
+                int x0 = i * CCalculator.set.dataSplit;
+                int delta = i == CCalculator.arr.Length - 1 ? CCalculator.set.maxValue - x0 : CCalculator.set.dataSplit;
                 ulong prevF = i == 0 ? 0 : CCalculator.arr[i - 1];
                 ulong nextF = i == CCalculator.arr.Length - 1 ? 0 : CCalculator.arr[i + 1];
                 double deltaPrev = CCalculator.arr[i] - prevF;
                 double deltaNext = CCalculator.arr[i] - nextF;
-                list.Add((x0+delta*(deltaPrev/(deltaPrev+deltaNext)))/CCalculator.digitK);
+                list.Add((x0+delta*(deltaPrev/(deltaPrev+deltaNext)))/CCalculator.set.digitK);
             }
         }
     }

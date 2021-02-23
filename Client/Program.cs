@@ -9,14 +9,28 @@ using System.Xml;
 
 namespace Client
 {
+    static class DataSize
+    {
+        public const int heard = 4 * sizeof(int);
+        public const int prefix = heard + sizeof(long);
+        public const int totalSize = prefix + sizeof(ulong) + sizeof(int);
+    }
+    static class Net
+    {
+        public static int port;
+        public static IPAddress ip;
+        public static int delay;
+        static public void Init(ref XmlDocument set)
+        {
+            port = int.Parse(set["config"]["global"]["port"].InnerText);
+            ip = IPAddress.Parse(set["config"]["global"]["ip"].InnerText);
+            delay = int.Parse(set["config"]["client"]["delay"].InnerText);
+        }
+    }
     delegate void Simple();
     delegate void Message(ref BinaryReader data);
     class Program
     {
-        public const int heard = sizeof(long) + 4 * sizeof(int);
-        static int _port;
-        static string _ip;
-        static int delay;
         static bool IsStop { set; get; } = false;
         static event Message NewMessageEvent = CCalculator.NewMessage;
         static event Simple GetInfoEvent = CCalculator.GetInfo;
@@ -53,9 +67,8 @@ namespace Client
             bool isSocket = false;
             try
             {
-                var client = new UdpClient(_port);
-                var ip = IPAddress.Parse(_ip);
-                client.JoinMulticastGroup(ip, 20);
+                var client = new UdpClient(Net.port);
+                client.JoinMulticastGroup(Net.ip, 20);
                 IPEndPoint endPoint = null;
                 Console.WriteLine("Client start.");
                 Console.WriteLine("Press enter for statistic show.");
@@ -64,14 +77,9 @@ namespace Client
                 while (!IsStop)
                 {
                     byte[] mess = client.Receive(ref endPoint);
-                    MemoryStream xxdata = new MemoryStream(heard + sizeof(ulong) + sizeof(int));
-                    xxdata.Write(mess);
-                    BinaryReader _xxdata = new BinaryReader(xxdata);
-                    _xxdata.BaseStream.Seek(heard, SeekOrigin.Begin);
-                    Console.WriteLine(_xxdata.ReadUInt64());
                     Task write = new Task(() =>
                     {
-                        MemoryStream data = new MemoryStream(heard + sizeof(ulong) + sizeof(int));
+                        MemoryStream data = new MemoryStream(DataSize.totalSize);
                         data.Write(mess);
                         Task.Run(() =>
                         {
@@ -81,7 +89,7 @@ namespace Client
                     });
                     write.Start();
                     write.Wait();
-                    Thread.Sleep(rnd.Next(delay));
+                    Thread.Sleep(rnd.Next(Net.delay));
                 }
             }
             catch (SocketException)
@@ -107,10 +115,26 @@ namespace Client
         static void Init()
         {
             var set = new XmlDocument();
-            set.Load("ClientConfig.xml");
-            _port = int.Parse(set["config"]["global"]["port"].InnerText);
-            _ip = set["config"]["global"]["ip"].InnerText;
-            delay = int.Parse(set["config"]["client"]["delay"].InnerText);
+            try
+            {
+                set.Load("ClientConfig.xml");
+                Net.Init(ref set);
+            }
+            catch (XmlException)
+            {
+                Console.WriteLine("Config file error");
+                IsStop = true;
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("Config file not found");
+                IsStop = true;
+            }
+            catch
+            {
+                Console.WriteLine("Config data error (port,ip or delay");
+                IsStop = true;
+            }
         }
 
     }
